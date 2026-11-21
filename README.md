@@ -58,8 +58,9 @@ const {
 - `dado` é uma função `(turno, jogador) => 1..6`, injetada em `criarPartida`.
   Quando `valorDado` é omitido, `jogarTurno` usa essa função; um valor explícito
   sempre prevalece. Sem dado disponível, o erro é `'dado indisponivel'`.
-- `jogadorInicial` é `0` (padrão) ou `1`. Opções inválidas devolvem
-  `valida: false`, `estado: null` e um `motivo`.
+- `jogadorInicial` é `0` (padrão) ou `1`. Opções que não são objeto devolvem
+  `valida: false`, `estado: null` e `motivo: 'opcoes invalidas'` (CT-04);
+  valores fora de `0/1` usam `jogadorInicial deve ser 0 ou 1` (CT-02).
 - `visao(estado, jogador)` devolve `{ posicoes, seguras }`, em que `seguras[i]`
   informa se a peça `i` está em uma das 8 casas seguras do circuito.
 
@@ -81,6 +82,10 @@ const {
 }
 ```
 
+Em todo estado válido, `jogador` e `vez` são iguais: os dois campos descrevem o
+mesmo jogador ativo e são atualizados juntos a cada turno. Um estado em que
+divergem é malformado e recebe `estado invalido` (CT-31).
+
 Cada posição de peça é:
 
 - `'base'` — ainda não saiu;
@@ -92,11 +97,14 @@ Todas as funções devolvem objeto novo. A não mutação é conferida pelo help
 `verifica` em todos os casos que recebem estado, e explicitamente nos CT-26,
 CT-30 e CT-37.
 
-Os motivos de erro usados nos testes são: `opcoes invalidas`,
-`dado deve ser funcao`, `jogadorInicial deve ser 0 ou 1`, `dado indisponivel`,
-`dado invalido`, `peca invalida`, `peca na casa`,
-`peca na base exige 1 ou 6`, `jogada impossivel`, `casa bloqueada`,
-`partida encerrada`, `estado invalido` e `jogador invalido`.
+Cada motivo do vocabulário é exigido por algum caso: `opcoes invalidas` e
+`dado deve ser funcao` (CT-04), `jogadorInicial deve ser 0 ou 1` (CT-02),
+`dado indisponivel` (CT-38), `dado invalido` (CT-03, CT-38), `peca invalida`
+(CT-16), `peca na casa` (CT-14, CT-17, CT-35), `peca na base exige 1 ou 6`
+(CT-06, CT-18, CT-37), `casa bloqueada` (CT-22, CT-26, CT-39),
+`partida encerrada` (CT-29), `estado invalido` e `jogador invalido` (CT-31).
+`jogada impossivel` não faz parte do vocabulário: com posições validadas e
+bounce na reta, o destino nunca é inexistente.
 
 ## 2. Funcionamento
 
@@ -140,6 +148,12 @@ passo; CT-31 exige `seguras` coerente em casas seguras e comuns, além da
 não-mutação de `visao`; CT-35 contrasta dado `1` e dado `6` na base; CT-39
 verifica que o bloqueio não afeta o próprio jogador.
 
+**Ajustes finais:** CT-04 exige `opcoes invalidas` para opções que não são
+objeto; CT-05, CT-19, CT-20 e CT-30 exigem que `jogador` acompanhe `vez`, e
+CT-31 recusa estados em que divergem — um implementador não pode ignorar
+`jogador`. CT-32 compara os **342 destinos exatos** com um oráculo independente
+e fixa explicitamente oito casos de bounce, inclusive o jogador 1.
+
 ## 3. Matriz de cobertura
 
 | Área | Casos |
@@ -157,8 +171,8 @@ verifica que o bloqueio não afeta o próprio jogador.
 
 ## 4. Variantes defeituosas detectadas
 
-Cada variante foi executada na cópia descartável contra a mesma suíte de 40
-testes. Todas foram detectadas:
+Cada uma das 14 variantes foi executada na cópia descartável contra a mesma
+suíte de 40 testes. Todas foram detectadas:
 
 | Variante | Falhas |
 |---|---|
@@ -173,11 +187,16 @@ testes. Todas foram detectadas:
 | dado injetado ignorado | 3 |
 | implementação que muta o estado | 8 |
 | `visao` sem o campo `seguras` | 1 |
+| ignora `jogador` (não valida nem atualiza) | 5 |
+| aceita opções que não são objeto | 1 |
+| bounce com um passo a mais na volta | 2 |
 
 ## 5. Rastreabilidade
 
 Os mesmos IDs (CT-01 a CT-39) aparecem nos arquivos `.test.js`, no resumo e
-nas seções do `.docx` (`casos_de_teste_ludo.docx`). O `.docx` segue o template
+nas seções do `.docx` (`casos_de_teste_ludo.docx`). O vocabulário de motivos
+da seção 1.3 também é rastreável: cada termo citado é exigido por um caso.
+O `.docx` segue o template
 da disciplina: especificação, resumo e, para cada caso, descrição,
 pré-condições, passos, cenário, dados de teste, resultado esperado e
 pós-condições.

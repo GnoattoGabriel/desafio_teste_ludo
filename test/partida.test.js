@@ -43,7 +43,7 @@ verifica('CT-28', 'vitoria do jogador 1 — simetria do CT-27',
 verifica('CT-29', 'jogada depois do fim e recusada sem alterar o estado',
   () => {
     const e0 = estadoCom(CASA, BASE, { vencedor: 0, vez: 0 });
-    const e1 = estadoCom(BASE, CASA, { vencedor: 1, vez: 1 });
+    const e1 = estadoCom(BASE, CASA, { vencedor: 1, vez: 1, jogador: 1 });
     return [api.jogarTurno(e0, 0, 6), api.jogarTurno(e0, 1, 3),
       api.jogarTurno(e1, 2, 1)];
   },
@@ -80,6 +80,8 @@ const jogarAteVitoria = (alvo) => {
     const proximo = api.jogarTurno(estado, indice, valor);
     passos.push({
       vez,
+      vezResultante: proximo.vez,
+      jogador: proximo.jogador,
       indice,
       valor,
       erro: proximo.erro,
@@ -108,6 +110,8 @@ for (const alvo of [0, 1]) {
         assert.equal(estado.turno, passos.length, 'CT-30: turno conta as jogadas');
         assert.ok(passos.every((p) => p.intacto), 'CT-30: nenhum passo mutou a entrada');
         assert.ok(passos.every((p) => p.erro === null), 'CT-30: nenhum passo recusado');
+        assert.ok(passos.every((p) => p.jogador === p.vezResultante),
+          'CT-30: jogador acompanha a vez resultante em todos os passos');
         assert.ok(passos.slice(0, -1).every((p) => p.vencedor === null),
           'CT-30: nenhum vencedor prematuro');
         assert.ok(passos.slice(0, -1).every((p) => p.status === 'jogando'),
@@ -133,7 +137,9 @@ verifica('CT-31', 'estados malformados e posicoes desconhecidas sao recusados',
       estadoCom([0, -1, 'base', 'base'], BASE),
       estadoCom([0, 52, 'base', 'base'], BASE),
       estadoCom([0, '0', 'base', 'base'], BASE),
-      estadoCom([undefined, 'base', 'base', 'base'], BASE)];
+      estadoCom([undefined, 'base', 'base', 'base'], BASE),
+      estadoCom(BASE, BASE, { vez: 1 }),
+      estadoCom(BASE, BASE, { jogador: 1 })];
     return {
       jogadas: ruims.map((e) => api.jogarTurno(e, 0, 3)),
       visoes: [api.visao(null, 0), api.visao({}, 0),

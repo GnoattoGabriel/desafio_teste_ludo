@@ -16,6 +16,7 @@ verifica('CT-19', 'captura em casa normal devolve a peca adversaria a base e da 
       assert.equal(r.pecas[0][0], 30, 'CT-19: capturadora na casa');
       assert.equal(r.pecas[1][0], 'base', 'CT-19: vitima na base');
       assert.equal(r.vez, 0, 'CT-19: captura mantem a vez');
+      assert.equal(r.jogador, 0, 'CT-19: jogador acompanha a vez');
       assert.equal(r.erro, null, 'CT-19: sem erro');
       assert.equal(r.turno, 1, 'CT-19: turno avanca');
       assert.deepEqual(r.pecas[1], ['base', 'base', 'base', 'base'],
@@ -33,6 +34,7 @@ verifica('CT-20', 'cair em casa segura nao captura e alterna o turno',
       assert.equal(r.pecas[0][0], 26, 'CT-20: destino 26');
       assert.equal(r.pecas[1][0], 26, 'CT-20: adversaria permanece');
       assert.equal(r.vez, 1, 'CT-20: turno alterna');
+      assert.equal(r.jogador, 1, 'CT-20: jogador acompanha a vez');
       assert.equal(r.erro, null, 'CT-20: sem erro');
       assert.equal(r.turno, 1, 'CT-20: turno avanca');
       assert.equal(r.pecas[1].filter((p) => p === 'base').length, 3,

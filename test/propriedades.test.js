@@ -10,7 +10,31 @@ const posicaoValida = (p) => p === 'base' || p === 'casa' ||
   (typeof p === 'string' && /^home-[0-4]$/.test(p)) ||
   (Number.isInteger(p) && p >= 0 && p <= 51);
 
-verifica('CT-32', 'todo dado 1..6 leva toda posicao a uma posicao valida',
+// Oraculo independente: converte o avanco na reta em destino exato e aplica
+// o bounce (a casa central so e alcancada com numero exato).
+const destinoNaReta = (avanco) => avanco === 5 ? 'casa' :
+  avanco < 5 ? `home-${avanco}` : `home-${10 - avanco}`;
+
+const destinoEsperado = (origem, dado, jogador) => {
+  if (!Number.isInteger(origem)) return destinoNaReta(Number(origem.slice(5)) + dado);
+  const entradaHome = jogador === 0 ? 51 : 25;
+  const dist = (entradaHome - origem + 52) % 52;
+  return dado < dist ? (origem + dado) % 52 : destinoNaReta(dado - dist);
+};
+
+// Bounces com destino fixo explicitamente, incluindo o jogador 1.
+const BOUNCES_CT32 = [
+  { jogador: 0, origem: 51, dado: 6, destino: 'home-4' },
+  { jogador: 0, origem: 'home-0', dado: 6, destino: 'home-4' },
+  { jogador: 0, origem: 'home-2', dado: 4, destino: 'home-4' },
+  { jogador: 0, origem: 'home-4', dado: 2, destino: 'home-4' },
+  { jogador: 0, origem: 'home-4', dado: 6, destino: 'home-0' },
+  { jogador: 1, origem: 25, dado: 6, destino: 'home-4' },
+  { jogador: 1, origem: 'home-1', dado: 6, destino: 'home-3' },
+  { jogador: 1, origem: 'home-4', dado: 6, destino: 'home-0' }
+];
+
+verifica('CT-32', 'todo dado 1..6 leva toda origem ao destino exato esperado',
   () => {
     const resultados = [];
     for (let posicao = 0; posicao <= 51; posicao++) {
@@ -25,15 +49,33 @@ verifica('CT-32', 'todo dado 1..6 leva toda posicao a uma posicao valida',
         resultados.push({ origem: `home-${casa}`, dado, r: api.jogarTurno(e, 0, dado) });
       }
     }
-    return resultados;
+    const bounces = BOUNCES_CT32.map(({ jogador, origem, dado }) => {
+      const pecas = [origem, 'base', 'base', 'base'];
+      const extras = jogador === 1 ? { vez: 1, jogador: 1 } : {};
+      const e = jogador === 0
+        ? estadoCom(pecas, BASE, extras)
+        : estadoCom(BASE, pecas, extras);
+      return api.jogarTurno(e, 0, dado);
+    });
+    return { resultados, bounces };
   },
   undefined, {
-    apos: (resultados) => {
+    apos: ({ resultados, bounces }) => {
       assert.equal(resultados.length, 342, 'CT-32: 57 origens x 6 dados');
       resultados.forEach(({ origem, dado, r }, i) => {
+        const esperado = destinoEsperado(origem, dado, 0);
         assert.equal(r.erro, null, `CT-32: ${origem}+${dado} sem erro (${i})`);
         assert.equal(posicaoValida(r.pecas[0][0]), true,
           `CT-32: destino valido para ${origem}+${dado}`);
+        assert.equal(r.pecas[0][0], esperado,
+          `CT-32: destino exato de ${origem}+${dado} e ${esperado}`);
+      });
+      assert.equal(bounces.length, BOUNCES_CT32.length, 'CT-32: tabela de bounce');
+      bounces.forEach((r, i) => {
+        const caso = BOUNCES_CT32[i];
+        assert.equal(r.erro, null, `CT-32: bounce ${i} sem erro`);
+        assert.equal(r.pecas[caso.jogador][0], caso.destino,
+          `CT-32: bounce ${caso.jogador} ${caso.origem}+${caso.dado}`);
       });
     }
   });

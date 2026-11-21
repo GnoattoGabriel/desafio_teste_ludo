@@ -66,11 +66,19 @@ verifica('CT-03', 'funcao de dado 1..6 e aceita; retorno fora da faixa e recusad
     }
   });
 
-verifica('CT-04', 'dado deve ser funcao: string, null, NaN e booleano sao recusados',
-  () => ['6', null, NaN, true].map((v) => api.criarPartida({ dado: v })),
+verifica('CT-04', 'opcoes nao-objeto dao opcoes invalidas; dado deve ser funcao',
+  () => ({
+    opcoes: [null, 42, 'x', []].map((v) => api.criarPartida(v)),
+    dados: ['6', null, NaN, true].map((v) => api.criarPartida({ dado: v }))
+  }),
   undefined, {
-    apos: (resultados) => {
-      resultados.forEach((r, i) => {
+    apos: ({ opcoes, dados }) => {
+      opcoes.forEach((r, i) => {
+        assert.equal(r.valida, false, `CT-04: opcoes recusadas ${i}`);
+        assert.equal(r.estado, null, `CT-04: sem estado ${i}`);
+        assert.equal(r.motivo, 'opcoes invalidas', `CT-04: motivo opcoes ${i}`);
+      });
+      dados.forEach((r, i) => {
         assert.equal(r.valida, false, `CT-04: recusa ${i}`);
         assert.equal(r.estado, null, `CT-04: sem estado ${i}`);
         assert.equal(r.motivo, 'dado deve ser funcao', `CT-04: motivo ${i}`);
@@ -92,6 +100,8 @@ verifica('CT-05', 'saida da base com dado 1 ou 6 vai para a entrada do jogador 0
       assert.equal(um.pecas[1].every((p) => p === 'base'), true, 'CT-05: adversario intacto');
       assert.equal(um.vez, 1, 'CT-05: dado 1 alterna a vez');
       assert.equal(seis.vez, 0, 'CT-05: dado 6 mantem a vez');
+      assert.equal(um.jogador, 1, 'CT-05: jogador acompanha a vez com 1');
+      assert.equal(seis.jogador, 0, 'CT-05: jogador acompanha a vez com 6');
     }
   });
 
