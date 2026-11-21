@@ -1,0 +1,9 @@
+{
+  "name": "desafio-teste-ludo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Casos de teste executaveis do desafio Ludo (2 jogadores).",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
